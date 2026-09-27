@@ -1,0 +1,1378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Team Quiz Battle</title>
+    <style>
+      :root {
+        --neon-blue: #00d2ff;
+        --neon-purple: #9d50bb;
+        --glass: rgba(255, 255, 255, 0.05);
+      }
+      body {
+        /* Prevent text selection everywhere */
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10+ and Edge */
+        user-select: none; /* Standard */
+        /* Palitan ang "Segoe UI, sans-serif" ng pinili mong font */
+        font-family: "Poppins", sans-serif;
+
+        /* Dagdag tip para mas maganda ang text */
+        -webkit-font-smoothing: antialiased;
+        background: radial-gradient(circle at top right, #2d3436, #000000);
+        color: white;
+        height: 100vh;
+        margin: 0;
+        display: flex;
+        justify-content: center; /* This centers horizontally */
+        align-items: center; /* This centers vertically */
+        overflow: hidden;
+      }
+
+      .container {
+        display: flex;
+        gap: 40px;
+        width: 95%; /* Slightly narrower to look better on screen */
+        max-width: 1200px;
+        height: 80vh; /* Set a fixed height that fits comfortably */
+        align-items: stretch; /* Forces both cards to have equal height */
+      }
+      .team-box {
+        background: var(--glass);
+        backdrop-filter: blur(15px);
+        border-radius: 25px;
+        flex: 1; /* Ensures both boxes are equal width */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Keeps the content inside the box */
+      }
+      /* This is the fixed header */
+      .question-header {
+        flex-shrink: 0; /* Keeps it from squishing */
+        text-align: center;
+      }
+      .team-header {
+        display: flex;
+        flex-direction: row; /* Side-by-side */
+        justify-content: space-between; /* Pushes Name left, Score right */
+        align-items: center; /* Centers them vertically */
+        padding: 20px 30px;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      /* This is the new scrollable area */
+      .scrollable-content {
+        flex-grow: 1;
+        overflow-y: auto; /* Only this part scrolls */
+        /* padding: 10px 30px; */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .team-header h2 {
+        margin: 0;
+        font-size: 2rem;
+      }
+
+      .team-header .score {
+        font-size: 3rem; /* Slightly reduced to fit nicely */
+        margin: 0;
+      }
+
+      /* The scrollable area */
+      .board {
+        /* padding: 20px 30px; */
+        flex-grow: 1; /* Ito ang nagpapalawak sa board */
+        overflow-y: auto; /* DITO: Kung mahaba ang content, mag-i-scroll lang siya sa loob */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start; /* Gawing flex-start para hindi tumalon ang content */
+      }
+      /* Ensure actions stay at the bottom */
+      .action-area {
+        padding: 15px;
+        border-top: 1px solid transparent;
+      }
+
+      /* REFINED TIMER UI */
+      .timer-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin: 10px auto 20px auto;
+      }
+      .timer-svg {
+        transform: rotate(-90deg);
+      }
+      .timer-circle-bg {
+        fill: none;
+        stroke: #333;
+        stroke-width: 6;
+      }
+      .timer-circle {
+        fill: none;
+        stroke: url(#gradient); /* o kung ano mang kulay gamit mo */
+        stroke-width: 6;
+        stroke-linecap: round;
+        /* DITO: Transition para maging smooth ang pagbawas */
+        transition: stroke-dashoffset 1s linear;
+      }
+      .timer-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+
+      .tile:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 10px 20px rgba(0, 210, 255, 0.4);
+      }
+
+      .tile {
+        user-select: none;
+        -webkit-user-select: none;
+        /* Prevent browser "ghost" interactions */
+
+        touch-action: none;
+        font-size: 2rem;
+        padding: 20px 30px; /* Mas malawak na click area */
+        margin: 12px;
+
+        user-select: none; /* Iwasan ang text selection habang nag-ta-tap */
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Mas bouncy na transition */
+        font-size: 1.8rem;
+        background: linear-gradient(
+          45deg,
+          var(--neon-blue),
+          var(--neon-purple)
+        );
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        display: inline-block;
+        transition: 0.2s;
+      }
+      /* Dagdag sa CSS */
+      .tile:active {
+        transform: scale(0.9); /* Mag-i-shrink nang konti kapag na-touch */
+        background: #008fb3; /* Mas dark na kulay kapag pinindot */
+      }
+      .slots-area {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .slot {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 60px;
+        height: 70px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        font-size: 2.5rem;
+        font-weight: bold;
+        flex-direction: column;
+        border: 2px solid transparent;
+      }
+      /* Styling the slots to look better on reveal */
+      .slot.correct {
+        border-color: #27ae60 !important;
+        background: rgba(39, 174, 96, 0.2) !important;
+        color: #2ecc71;
+      }
+
+      .slot.incorrect {
+        border-color: #e74c3c !important;
+        background: rgba(231, 76, 60, 0.2) !important;
+        color: #e74c3c;
+      }
+      .correct-answer-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .correct-answer-tile {
+        font-size: 1.2rem;
+        padding: 5px 15px;
+        background: #27ae60;
+        color: white;
+        border-radius: 6px;
+        font-weight: bold;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        75% {
+          transform: translateX(5px);
+        }
+      }
+      .slot.incorrect {
+        animation: shake 0.3s ease-in-out;
+      }
+      /* Add a transition for the reveal */
+      .slot {
+        transition: all 0.3s ease;
+      }
+      .result-icon {
+        position: absolute;
+        top: -25px;
+        font-size: 1.2rem;
+      }
+      .feedback {
+        font-size: 1.4rem;
+        margin: 20px 0;
+        font-weight: bold;
+        color: var(--neon-blue);
+        min-height: 24px;
+      }
+      button {
+        background: linear-gradient(90deg, #ff7675, #d63031);
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 5px;
+        transition: 0.2s;
+      }
+      button:hover {
+        transform: scale(1.05);
+      }
+      #winnerModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .tile.disabled {
+        background: #555 !important;
+        cursor: not-allowed;
+        opacity: 0.6;
+        pointer-events: none; /* Hindi na maki-click */
+      }
+      .applause {
+        position: fixed;
+        font-size: 3rem;
+        animation: floatUp 2s linear forwards;
+        pointer-events: none;
+        z-index: 2000;
+      }
+
+      .score-floater {
+        position: absolute;
+        font-size: 5rem; /* Ginawang mas malaki (5rem) */
+        font-weight: 900;
+        color: #00d2ff;
+        text-shadow: 0 0 20px rgba(0, 210, 255, 0.8);
+        animation: floatUpFade 3s ease-out forwards; /* Ginawang 3s ang duration */
+        pointer-events: none;
+        z-index: 100;
+        top: 40%; /* Inayos ang position para mas nasa gitna */
+        left: 50%;
+        transform: translateX(-50%); /* Para sakto sa center */
+      }
+
+      @keyframes floatUpFade {
+        0% {
+          transform: translateY(0) scale(0.5);
+          opacity: 0;
+        }
+        20% {
+          transform: translateY(-20px) scale(1.2);
+          opacity: 1;
+        } /* May konting "pop" effect */
+        100% {
+          transform: translateY(-150px) scale(1);
+          opacity: 0;
+        } /* Mas mataas ang lipad */
+      }
+      /* Para sa Hamburger */
+      #hamburger {
+        position: fixed !important;
+        top: 15px;
+        left: 20px;
+        z-index: 9999 !important; /* Siguradong nasa tuktok */
+        cursor: pointer;
+        color: white;
+        font-size: 2rem;
+        /* Add shadow para kitang-kita kahit anong kulay ng background */
+        text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      }
+
+      /* General Modal Style */
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        justify-content: center;
+        align-items: center;
+        z-index: 5000;
+      }
+
+      .modal-content {
+        background: #2d3436;
+        padding: 40px;
+        border-radius: 20px;
+        border: 2px solid var(--neon-blue);
+        text-align: center;
+        color: white;
+      }
+      input {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-family: "Poppins", sans-serif;
+        border: 1px solid var(--neon-blue) !important;
+      }
+      input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+    </style>
+  </head>
+  <!-- HOW TO PLAY MODAL -->
+  <div
+    id="howToModal"
+    style="
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    "
+  >
+    <div
+      style="
+        text-align: left;
+        background: #2d3436;
+        padding: 30px;
+        border-radius: 20px;
+        border: 2px solid var(--neon-blue);
+        max-width: 500px;
+        color: white;
+        font-family: &quot;Poppins&quot;, sans-serif;
+      "
+    >
+      <h1 style="text-align: center; color: var(--neon-blue)">How to Play</h1>
+
+      <p>
+        <strong>1. Start the Game / ゲーム開始</strong><br />
+        Click "Start Game" to begin. Each team has 20 seconds per question.<br />
+        <small
+          >「Start
+          Game」を押して開始します。各チーム、1問につき20秒の制限時間があります。</small
+        >
+      </p>
+
+      <p>
+        <strong>2. Solve the Puzzle / パズルを解く</strong><br />
+        Tap the letters or words to place them into the slots. Use "Reset" if
+        you make a mistake.<br />
+        <small
+          >表示されている文字や単語をタップしてスロットに入れます。間違えた場合は「Reset」ボタンを使ってください。</small
+        >
+      </p>
+
+      <p>
+        <strong>3. Scoring System / スコアリング</strong><br />
+        You earn 1 point for every correct letter or word placed in the right
+        slot!<br />
+        <small
+          >正解の文字や単語をスロットに入れるごとに、1ポイント獲得できます！</small
+        >
+      </p>
+
+      <p>
+        <strong>4. Automatic Finish / 自動終了</strong><br />
+        The game will automatically check your answer. Once the last question is
+        answered, the final total score and winner will be displayed.<br />
+        <small
+          >回答は自動的に採点されます。最後の問題が終わると、自動的に最終合計スコアと勝者が表示されます。</small
+        >
+      </p>
+      <div style="margin: 20px 0; text-align: center">
+        <label
+          >Team Name:
+          <input
+            type="text"
+            id="nameA"
+            placeholder="BOYS Team Name"
+            value="BOYS"
+            style="
+              padding: 10px;
+              margin: 5px;
+              border-radius: 5px;
+              border: none;
+            "
+        /></label>
+
+        <input
+          type="text"
+          id="nameB"
+          placeholder="GIRLS Team Name"
+          value="GIRLS"
+          style="padding: 10px; margin: 5px; border-radius: 5px; border: none"
+        />
+      </div>
+      <div style="text-align: center; margin-top: 20px">
+        <button
+          onclick="startGame()"
+          style="padding: 10px 40px; font-size: 1.2rem"
+        >
+          Start Game
+        </button>
+      </div>
+    </div>
+  </div>
+  <body>
+    <!-- HAMBURGER MENU -->
+    <div id="hamburger">☰</div>
+
+    <div id="settingsModal" class="overlay">
+      <div class="modal-content">
+        <h2>Settings</h2>
+        <button onclick="manualEndGame()" class="btn-end">END GAME</button>
+        <button onclick="closeModal('settingsModal')">Close</button>
+      </div>
+    </div>
+    <div class="container">
+      <div class="team-box" id="teamA">
+        <div class="team-header" style="background: #ff3838">
+          <div
+            class="question-counter"
+            id="counterA"
+            style="font-size: 1.2rem; font-weight: bold"
+          ></div>
+          <h2>BOYS</h2>
+          <div class="score">0</div>
+        </div>
+
+        <div class="timer-container">
+          <svg class="timer-svg" width="80" height="80">
+            <defs>
+              <linearGradient id="gradient">
+                <stop offset="0%" stop-color="#00d2ff" />
+                <stop offset="100%" stop-color="#9d50bb" />
+              </linearGradient>
+            </defs>
+            <circle class="timer-circle-bg" cx="40" cy="40" r="37" />
+            <circle class="timer-circle" id="circleA" cx="40" cy="40" r="37" />
+          </svg>
+          <div class="timer-text" id="timerA">20</div>
+        </div>
+        <div class="board"></div>
+        <div class="feedback"></div>
+        <div class="action-area"></div>
+      </div>
+      <div class="team-box" id="teamB">
+        <div class="team-header" style="background: #3c82f7">
+          <div
+            class="question-counter"
+            id="counterB"
+            style="font-size: 1.2rem; font-weight: bold"
+          ></div>
+          <h2>GIRLS</h2>
+          <div class="score">0</div>
+        </div>
+        <div class="timer-container">
+          <svg class="timer-svg" width="80" height="80">
+            <circle class="timer-circle-bg" cx="40" cy="40" r="37" />
+            <circle class="timer-circle" id="circleB" cx="40" cy="40" r="37" />
+          </svg>
+          <div class="timer-text" id="timerB">20</div>
+        </div>
+        <div class="board"></div>
+        <div class="feedback"></div>
+        <div class="action-area"></div>
+      </div>
+    </div>
+
+    <div id="winnerModal">
+      <div
+        style="
+          text-align: center;
+          background: #2d3436;
+          padding: 40px;
+          border-radius: 20px;
+          border: 2px solid var(--neon-blue);
+        "
+      >
+        <div id="finalResults"></div>
+        <button onclick="location.reload()">Play Again</button>
+      </div>
+    </div>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script> -->
+    <script>
+      // Function para mag-play ng SFX
+      function playSound(fileName) {
+        const audio = new Audio(`assets/sound/${fileName}`);
+        audio.play().catch((e) => console.log("Audio play failed: ", e));
+      }
+      // Background Music
+      const bgMusic = new Audio("assets/sound/bgm.mp3");
+      bgMusic.loop = true;
+      bgMusic.volume = 0.2;
+
+      let teamQuestions = {
+        teamA: [],
+        teamB: [],
+      };
+      // QUESTION DATA
+      const rawQuestions = [
+        {
+          type: "char",
+          questionText: "ホームステイ",
+          sentence: "HOMESTAY",
+          letters: ["H", "O", "M", "E", "S", "T", "A", "Y"],
+        },
+        {
+          type: "char",
+          questionText: "助言、アドバイス",
+          sentence: "ADVICE",
+          letters: ["A", "D", "V", "I", "C", "E"],
+        },
+        {
+          type: "char",
+          questionText: "～の間中",
+          sentence: "DURING",
+          letters: ["D", "U", "R", "I", "N", "G"],
+        },
+        {
+          type: "space",
+          questionText: "～の一員",
+          sentence: "A MEMBER OF",
+          letters: ["A", "M", "E", "M", "B", "E", "R", "O", "F"],
+        },
+        {
+          type: "char",
+          questionText: "客",
+          sentence: "GUEST",
+          letters: ["G", "U", "E", "S", "T"],
+        },
+        {
+          type: "char",
+          questionText: "従う、守る",
+          sentence: "FOLLOW",
+          letters: ["F", "O", "L", "L", "O", "W"],
+        },
+        {
+          type: "char",
+          questionText: "決まり、規則",
+          sentence: "RULE",
+          letters: ["R", "U", "L", "E"],
+        },
+        {
+          type: "char",
+          questionText: "質問",
+          sentence: "QUESTION",
+          letters: ["Q", "U", "E", "S", "T", "I", "O", "N"],
+        },
+        {
+          type: "char",
+          questionText: "たずねる",
+          sentence: "ASK",
+          letters: ["A", "S", "K"],
+        },
+        {
+          type: "char",
+          questionText: "大切な",
+          sentence: "IMPORTANT",
+          letters: ["I", "M", "P", "O", "R", "T", "A", "N", "T"],
+        },
+        {
+          type: "space",
+          questionText: "恥ずかしがらないで。",
+          sentence: "DON'T BE SHY",
+          letters: ["D", "O", "N", "'", "T", "B", "E", "S", "H", "Y"],
+        },
+        {
+          type: "space",
+          questionText: "～しなければならない",
+          sentence: "HAVE TO",
+          letters: ["H", "A", "V", "E", "T", "O"],
+        },
+        {
+          type: "space",
+          questionText: "～しなくてよい",
+          sentence: "DON'T HAVE TO",
+          letters: ["D", "O", "N", "'", "T", "H", "A", "V", "E", "T", "O"],
+        },
+        {
+          type: "space",
+          questionText: "何か～がありますか。",
+          sentence: "ARE THERE ANY",
+          letters: ["A", "R", "E", "T", "H", "E", "R", "E", "A", "N", "Y"],
+        },
+        {
+          type: "char",
+          questionText: "～しなければならない",
+          sentence: "MUST",
+          letters: ["M", "U", "S", "T"],
+        },
+        {
+          type: "space",
+          questionText: "～してはいけない",
+          sentence: "MUST NOT",
+          letters: ["M", "U", "S", "T", "N", "O", "T"],
+        },
+        {
+          type: "char",
+          questionText: "また、",
+          sentence: "ALSO",
+          letters: ["A", "L", "S", "O"],
+        },
+        {
+          type: "space",
+          questionText: "水を節約する",
+          sentence: "SAVE WATER",
+          letters: ["S", "A", "V", "E", "W", "A", "T", "E", "R"],
+        },
+        {
+          type: "space",
+          questionText: "シャワーを浴びる",
+          sentence: "TAKE SHOWERS",
+          letters: ["T", "A", "K", "E", "S", "H", "O", "W", "E", "R", "S"],
+        },
+        {
+          type: "space",
+          questionText: "約5分。",
+          sentence: "ABOUT FIVE MINUTES",
+          letters: [
+            "A",
+            "B",
+            "O",
+            "U",
+            "T",
+            "F",
+            "I",
+            "V",
+            "E",
+            "M",
+            "I",
+            "N",
+            "U",
+            "T",
+            "E",
+            "S",
+          ],
+        },
+        {
+          type: "space",
+          questionText: "最善を尽くす",
+          sentence: "DO YOUR BEST",
+          letters: ["D", "O", "Y", "O", "U", "R", "B", "E", "S", "T"],
+        },
+        {
+          type: "space",
+          questionText: "高齢の夫婦",
+          sentence: "ELDERLY COUPLE",
+          letters: [
+            "E",
+            "L",
+            "D",
+            "E",
+            "R",
+            "L",
+            "Y",
+            "C",
+            "O",
+            "U",
+            "P",
+            "L",
+            "E",
+          ],
+        },
+        {
+          type: "space",
+          questionText: "読書を楽しむ",
+          sentence: "ENJOY READING",
+          letters: ["E", "N", "J", "O", "Y", "R", "E", "A", "D", "I", "N", "G"],
+        },
+        {
+          type: "char",
+          questionText: "終える",
+          sentence: "FINISH",
+          letters: ["F", "I", "N", "I", "S", "H"],
+        },
+        {
+          type: "space",
+          questionText: "退屈になる",
+          sentence: "GET BORED",
+          letters: ["G", "E", "T", "B", "O", "R", "E", "D"],
+        },
+        {
+          type: "char",
+          questionText: "なぜなら",
+          sentence: "BECAUSE",
+          letters: ["B", "E", "C", "A", "U", "S", "E"],
+        },
+        {
+          type: "space",
+          questionText: "私は何もすることがない。",
+          sentence: "I HAVE NOTHING TO DO",
+          letters: [
+            "I",
+            "H",
+            "A",
+            "V",
+            "E",
+            "N",
+            "O",
+            "T",
+            "H",
+            "I",
+            "N",
+            "G",
+            "T",
+            "O",
+            "D",
+            "O",
+          ],
+        },
+        {
+          type: "char",
+          questionText: "親切な",
+          sentence: "KIND",
+          letters: ["K", "I", "N", "D"],
+        },
+        {
+          type: "space",
+          questionText: "何かする",
+          sentence: "DO SOMETHING",
+          letters: ["D", "O", "S", "O", "M", "E", "T", "H", "I", "N", "G"],
+        },
+        {
+          type: "space",
+          questionText: "私はどうしたらよいのですか。",
+          sentence: "WHAT SHOULD I DO",
+          letters: [
+            "W",
+            "H",
+            "A",
+            "T",
+            "S",
+            "H",
+            "O",
+            "U",
+            "L",
+            "D",
+            "I",
+            "D",
+            "O",
+          ],
+        },
+        {
+          type: "space",
+          questionText: "～することが得意です",
+          sentence: "BE GOOD AT ING",
+          letters: ["B", "E", "G", "O", "O", "D", "A", "T", "I", "N", "G"],
+        },
+        {
+          type: "space",
+          questionText: "～がひとつあります。",
+          sentence: "THERE IS ONE",
+          letters: ["T", "H", "E", "R", "E", "I", "S", "O", "N", "E"],
+        },
+        {
+          type: "char",
+          questionText: "問題",
+          sentence: "PROBLEM",
+          letters: ["P", "R", "O", "B", "L", "E", "M"],
+        },
+        {
+          type: "space",
+          questionText: "～したくない",
+          sentence: "DON'T WANT TO",
+          letters: ["D", "O", "N", ",", "T", "W", "A", "N", "T", "T", "O"],
+        },
+        {
+          type: "char",
+          questionText: "傷つける",
+          sentence: "HURT",
+          letters: ["H", "U", "R", "T"],
+        },
+        {
+          type: "char",
+          questionText: "感情",
+          sentence: "FEELING",
+          letters: ["F", "E", "E", "L", "I", "N", "G"],
+        },
+        {
+          type: "space",
+          questionText: "彼と話すことは",
+          sentence: "TALKING WITH HIM",
+          letters: [
+            "T",
+            "A",
+            "L",
+            "K",
+            "I",
+            "N",
+            "G",
+            "W",
+            "I",
+            "T",
+            "H",
+            "H",
+            "I",
+            "M",
+          ],
+        },
+        {
+          type: "char",
+          questionText: "しかし、",
+          sentence: "HOWEVER",
+          letters: ["H", "O", "W", "E", "V", "E", "R"],
+        },
+        {
+          type: "char",
+          questionText: "答える",
+          sentence: "ANSWER",
+          letters: ["A", "N", "S", "W", "E", "R"],
+        },
+        {
+          type: "space",
+          questionText: "例えば、",
+          sentence: "FOR EXAMPLE",
+          letters: ["F", "O", "R", "E", "X", "A", "M", "P", "L", "E"],
+        },
+        {
+          type: "space",
+          questionText: "言う ― 言った",
+          sentence: "SAY SAID",
+          letters: ["S", "A", "Y", "S", "A", "I", "D"],
+        },
+        {
+          type: "space",
+          questionText: "～を脱ぐ",
+          sentence: "TAKE OFF",
+          letters: ["T", "A", "K", "E", "O", "F", "F"],
+        },
+        {
+          type: "char",
+          questionText: "入る",
+          sentence: "ENTER",
+          letters: ["E", "N", "T", "E", "R"],
+        },
+        {
+          type: "space",
+          questionText: "できなかった",
+          sentence: "COULDN'T",
+          letters: ["C", "O", "U", "L", "D", "N", "'", "T"],
+        },
+        {
+          type: "char",
+          questionText: "説明する",
+          sentence: "EXPLAIN",
+          letters: ["E", "X", "P", "L", "A", "I", "N"],
+        },
+        {
+          type: "space",
+          questionText: "学びたい気がする",
+          sentence: "FEEL LIKE LEARNING",
+          letters: [
+            "F",
+            "E",
+            "E",
+            "L",
+            "L",
+            "I",
+            "K",
+            "E",
+            "L",
+            "E",
+            "A",
+            "R",
+            "N",
+            "I",
+            "N",
+            "G",
+          ],
+        },
+        {
+          type: "space",
+          questionText: "おたがいに",
+          sentence: "EACH OTHER",
+          letters: ["E", "A", "C", "H", "O", "T", "H", "E", "R"],
+        },
+        {
+          type: "space",
+          questionText: "しようと続ける",
+          sentence: "KEEP TRYING",
+          letters: ["K", "E", "E", "P", "T", "R", "Y", "I", "N", "G"],
+        },
+        {
+          type: "char",
+          questionText: "注意深く",
+          sentence: "CAREFULLY",
+          letters: ["C", "A", "R", "E", "F", "U", "L", "L", "Y"],
+        },
+        {
+          type: "space",
+          questionText: "近い将来",
+          sentence: "IN THE NEAR FUTURE",
+          letters: [
+            "I",
+            "N",
+            "T",
+            "H",
+            "E",
+            "N",
+            "E",
+            "A",
+            "R",
+            "F",
+            "U",
+            "T",
+            "U",
+            "R",
+            "E",
+          ],
+        },
+      ];
+      let teamIndices = { teamA: 0, teamB: 0 },
+        teamScores = { teamA: 0, teamB: 0 },
+        intervals = {};
+
+      // I-initialize ang random questions para sa bawat team
+      function initGame() {
+        // Gagamitin natin ang spread operator [...] para hindi ma-modify ang original na rawQuestions
+        teamQuestions.teamA = shuffleArray([...rawQuestions]);
+        teamQuestions.teamB = shuffleArray([...rawQuestions]);
+
+        renderTeam("teamA");
+        renderTeam("teamB");
+      }
+      function renderTeam(teamId) {
+        const box = document.getElementById(teamId);
+        const qIdx = teamIndices[teamId];
+        const qList = teamQuestions[teamId];
+
+        // 1. Update ang Question Counter sa Header
+        const counterEl = box.querySelector(".question-counter");
+        if (counterEl) {
+          counterEl.innerText = `${Math.min(qIdx + 1, qList.length)}/${qList.length}`;
+        }
+
+        // 2. Linisin ang feedback area
+        box.querySelector(".feedback").innerHTML = "";
+
+        // 3. WAITING PAGE LOGIC (Kapag tapos na ang lahat ng questions)
+        if (qIdx >= qList.length) {
+          const finalScore = teamScores[teamId];
+          box.querySelector(".board").innerHTML = `
+      <div style="padding: 50px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+        <h2 style="color: #00d2ff; font-size: 2rem;">Waiting for the other team...</h2>
+        <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+          <p style="margin: 0; font-size: 1.2rem;">Your Final Score:</p>
+          <span style="color: #27ae60; font-weight: bold; font-size: 4rem;">${finalScore}</span>
+        </div>
+        <div style="margin-top: 30px; font-size: 3rem;">⏳</div>
+      </div>
+    `;
+          box.querySelector(".action-area").innerHTML = "";
+          return;
+        }
+
+        // 4. NORMAL RENDERING LOGIC
+        const q = qList[qIdx];
+        const tiles = shuffleArray([...q.letters]);
+
+        // DITO: Dynamic splitting para sa Word vs Char/Space type
+        const isWordType = q.type === "word";
+        const displayItems = isWordType
+          ? q.sentence.split(" ")
+          : q.sentence.split("");
+
+        box.querySelector(".board").innerHTML = `
+    <div class="question-header"><h1>${q.questionText}</h1></div>
+    <div class="scrollable-content">
+      <div style="margin-bottom: 25px; padding:0px 25px">
+        ${tiles.map((item) => `<span class="tile" onclick="moveLetter(this, '${teamId}')">${item}</span>`).join("")}
+      </div>
+      <div class="slots-area">
+        ${displayItems
+          .map((item) =>
+            item === " "
+              ? `<div style="width: 15px;"></div>`
+              : `<span class="slot"></span>`,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+
+        // 5. Reset button
+        box.querySelector(".action-area").innerHTML = `
+    <button onclick="resetBoard('${teamId}')">Reset</button>
+  `;
+      }
+      function startGame() {
+        // 1. Kunin ang pangalan mula sa input
+        const nameA = document.getElementById("nameA").value;
+        const nameB = document.getElementById("nameB").value;
+
+        // 2. I-update ang h2 sa bawat team box
+        document.querySelector("#teamA .team-header h2").innerText = nameA;
+        document.querySelector("#teamB .team-header h2").innerText = nameB;
+
+        // 3. I-start ang laro
+        bgMusic.play();
+        document.getElementById("howToModal").style.display = "none";
+
+        startTimer("teamA");
+        startTimer("teamB");
+      }
+      // Hamburger Logic
+      document.getElementById("hamburger").addEventListener("click", () => {
+        document.getElementById("settingsModal").style.display = "flex";
+      });
+
+      // Generic Close function
+      function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+      }
+
+      // End Game Logic
+      function manualEndGame() {
+        closeModal("settingsModal");
+        showWinnerModal(); // Siguraduhin na ang showWinnerModal() ay nasa code mo
+        triggerApplause();
+      }
+
+      function startTimer(teamId) {
+        if (intervals[teamId]) clearInterval(intervals[teamId]);
+
+        let totalTime = 30; // 30 seconds
+        let timeLeft = totalTime;
+        const box = document.getElementById(teamId);
+        const timerDisplay = box.querySelector(".timer-text");
+        const circle = box.querySelector(".timer-circle");
+
+        // 251 ang circumference (2 * pi * r) kung saan r = 40 (based sa SVG mo)
+        const radius = 37;
+        const circumference = 2 * Math.PI * radius;
+        circle.style.strokeDasharray = circumference;
+        circle.style.strokeDashoffset = 0;
+
+        if (timerDisplay) timerDisplay.innerText = timeLeft;
+
+        intervals[teamId] = setInterval(() => {
+          timeLeft--;
+          if (timerDisplay) timerDisplay.innerText = timeLeft;
+
+          // --- DITO ANG TIMER EFFECT ---
+          // Kinukwenta natin kung gaano na karami ang dapat na "offset"
+          const offset = circumference - (timeLeft / totalTime) * circumference;
+          circle.style.strokeDashoffset = offset;
+          // -----------------------------
+
+          if (timeLeft <= 0) {
+            clearInterval(intervals[teamId]);
+            checkAnswer(teamId);
+          }
+        }, 1000);
+      }
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+      // 2. Move Letter: Para sa paglagay ng tiles sa slots
+      function moveLetter(el, teamId) {
+        playSound("click.mp3");
+        const box = document.getElementById(teamId);
+
+        // Kunin LAHAT ng elements sa slots-area, kasama yung spacer div at slots
+        const slotsArea = box.querySelector(".slots-area");
+        const items = Array.from(slotsArea.children);
+
+        // Hanapin ang unang slot na walang laman (innerText ay empty)
+        // Tandaan: Ang spacer div ay walang innerText, kaya kailangan nating i-check kung may class "slot"
+        const emptySlot = items.find(
+          (item) => item.classList.contains("slot") && !item.innerText,
+        );
+
+        if (emptySlot) {
+          emptySlot.innerText = el.innerText;
+          el.style.display = "none";
+
+          // Check kung puno na ang lahat ng slots
+          const allSlots = items.filter((item) =>
+            item.classList.contains("slot"),
+          );
+          const isFull = allSlots.every((slot) => slot.innerText !== "");
+
+          if (isFull) {
+            setTimeout(() => checkAnswer(teamId), 300);
+          }
+        }
+      }
+      // 5. Reset Board
+      function resetBoard(teamId) {
+        const box = document.getElementById(teamId);
+        box.querySelectorAll(".slot").forEach((s) => {
+          const char = s.innerText;
+          if (char) {
+            const tile = Array.from(box.querySelectorAll(".tile")).find(
+              (t) => t.innerText === char && t.style.display === "none",
+            );
+            if (tile) tile.style.display = "inline-block";
+            s.innerText = "";
+            s.classList.remove("correct", "incorrect");
+          }
+        });
+      }
+      function checkAnswer(teamId) {
+        if (intervals[teamId]) clearInterval(intervals[teamId]);
+        const box = document.getElementById(teamId);
+        box.querySelectorAll(".tile").forEach((t) => {
+          t.onclick = null;
+          t.classList.add("disabled");
+        });
+        box.querySelector(".action-area").innerHTML = "";
+
+        const q = teamQuestions[teamId][teamIndices[teamId]];
+        const slots = Array.from(box.querySelectorAll(".slot"));
+
+        // DITO: Dynamic target base sa type
+        let target;
+        if (q.type === "word") {
+          target = q.sentence.split(" "); // ['AFTER', 'SCHOOL']
+        } else {
+          target = q.sentence.split(""); // ['A', 'F', 'T', 'E', 'R', ' ', 'S', 'C'...]
+        }
+
+        let pts = 0;
+
+        if (q.type === "word") {
+          // WORD LOGIC: Bawat slot ay isang buong salita
+          slots.forEach((s, i) => {
+            const isCorrect = s.innerText.trim() === target[i];
+            s.classList.add(isCorrect ? "correct" : "incorrect");
+            if (isCorrect) pts++;
+          });
+        } else {
+          // CHAR LOGIC: Bawat slot ay isang letra
+          let slotIdx = 0;
+          target.forEach((char) => {
+            if (char === " ") return;
+            const s = slots[slotIdx];
+            if (s) {
+              const isCorrect = s.innerText.trim() === char;
+              s.classList.add(isCorrect ? "correct" : "incorrect");
+              if (isCorrect) pts++;
+            }
+            slotIdx++;
+          });
+        }
+
+        teamScores[teamId] += pts;
+        box.querySelector(".score").innerText = teamScores[teamId];
+        if (pts > 0) {
+          playSound("correct.mp3");
+          showScoreFloater(teamId, pts);
+        }
+
+        // FEEDBACK
+        const feedbackArea = box.querySelector(".feedback");
+        feedbackArea.innerHTML = `
+    <div style="margin-top: 15px; text-align: center;">
+      <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">correct answer is:</div>
+      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        ${q.sentence
+          .split(" ")
+          .map(
+            (word) =>
+              `<div style="background: #27ae60; padding: 5px 15px; border-radius: 6px; font-weight: bold; color: white;">${word}</div>`,
+          )
+          .join(" ")}
+      </div>
+    </div>
+  `;
+
+        setTimeout(() => {
+          const isLastQuestion =
+            teamIndices[teamId] === teamQuestions[teamId].length - 1;
+          if (isLastQuestion) {
+            teamIndices[teamId]++;
+            renderTeam(teamId);
+            checkBothTeamsFinished();
+          } else {
+            box.querySelector(".action-area").innerHTML = `
+        <button onclick="next('${teamId}')" style="background: #00d2ff; color: #000; padding: 10px 30px; border-radius: 50px; border: none; cursor: pointer; font-weight: bold;">
+          Next Question
+        </button>`;
+          }
+        }, 1500);
+      }
+      function next(teamId) {
+        teamIndices[teamId]++; // Laktawan ang kasalukuyang index
+        renderTeam(teamId); // I-render ang susunod na question
+
+        // Kung may tanong pa, simulan ang timer
+        if (teamIndices[teamId] < teamQuestions[teamId].length) {
+          startTimer(teamId);
+        } else {
+          checkBothTeamsFinished();
+        }
+      }
+      function checkBothTeamsFinished() {
+        const teamATotal = teamQuestions["teamA"].length;
+        const teamBTotal = teamQuestions["teamB"].length;
+
+        const teamAFinished = teamIndices["teamA"] >= teamATotal;
+        const teamBFinished = teamIndices["teamB"] >= teamBTotal;
+
+        if (teamAFinished && teamBFinished) {
+          // DITO: Nagdagdag tayo ng 2.5 seconds delay (2500ms)
+          // bago i-trigger ang Victory Page
+          setTimeout(() => {
+            triggerApplause();
+            showWinnerModal();
+          }, 2500);
+        }
+      }
+      function triggerApplause() {
+        // Mag-play ng Victory Sound
+        playSound("victory.mp3");
+        for (let i = 0; i < 20; i++) {
+          const span = document.createElement("span");
+          span.innerHTML = "👏";
+          span.className = "applause";
+          span.style.left = Math.random() * 100 + "vw";
+          span.style.animationDelay = Math.random() * 1 + "s";
+          document.body.appendChild(span);
+          setTimeout(() => span.remove(), 2000);
+        }
+      }
+
+      function checkWinner() {
+        // 1. I-check kung pareho nang lampas sa dami ng questions ang indices ng Team A at B
+        if (
+          teamIndices.teamA >= rawQuestions.length &&
+          teamIndices.teamB >= rawQuestions.length
+        ) {
+          // 2. Patigilin ang anumang tumatakbong timer
+          clearInterval(intervals.teamA);
+          clearInterval(intervals.teamB);
+
+          // 3. I-trigger ang visual effects (applause)
+          triggerApplause();
+
+          // 4. I-compute kung sino ang panalo
+          let winnerText =
+            teamScores.teamA > teamScores.teamB
+              ? "BOYS WIN!"
+              : teamScores.teamB > teamScores.teamA
+                ? "GIRLS WIN!"
+                : "IT'S A DRAW!";
+
+          // 5. I-display ang modal
+          document.getElementById("winnerModal").style.display = "flex";
+          document.getElementById("finalResults").innerHTML = `
+          <h2 style="margin: 0; color: #00d2ff;">${winnerText}</h2>
+          <br>
+          <div style="font-size: 1.2rem; line-height: 2;">
+              BOYS Total Score: ${teamScores.teamA} <br>
+              GIRLS Total Score: ${teamScores.teamB}
+          </div>
+        `;
+        }
+      }
+      function showScoreFloater(teamId, points) {
+        const box = document.getElementById(teamId);
+
+        // Siguraduhin na ang box ay may relative positioning
+        box.style.position = "relative";
+
+        const floater = document.createElement("div");
+        floater.className = "score-floater";
+        floater.innerText = `+${points}`;
+
+        // I-append ang floater sa loob ng box
+        box.appendChild(floater);
+
+        // Burahin pagkatapos ng 3 segundo
+        setTimeout(() => {
+          floater.remove();
+        }, 3000);
+      }
+      function showWinnerModal() {
+        const modal = document.getElementById("winnerModal");
+        modal.style.display = "flex";
+
+        // 1. Kunin ang mga pangalan na naka-set na sa header
+        const nameA = document.querySelector(
+          "#teamA .team-header h2",
+        ).innerText;
+        const nameB = document.querySelector(
+          "#teamB .team-header h2",
+        ).innerText;
+
+        // 2. Logic para sa winner text
+        let winnerText =
+          teamScores.teamA > teamScores.teamB
+            ? `${nameA} WINS!`
+            : teamScores.teamB > teamScores.teamA
+              ? `${nameB} WINS!`
+              : "IT'S A DRAW!";
+
+        // 3. I-update ang modal content gamit ang mga pangalang nakuha
+        document.getElementById("finalResults").innerHTML = `
+        <h2 style="margin-bottom: 20px; color: #00d2ff;">${winnerText}</h2>
+        <div style="font-size: 1.5rem; text-align: left; display: inline-block;">
+            <p>🏆 ${nameA}: <strong>${teamScores.teamA}</strong></p>
+            <p>🏆 ${nameB}: <strong>${teamScores.teamB}</strong></p>
+        </div>
+      `;
+      }
+
+      initGame();
+    </script>
+  </body>
+</html>
